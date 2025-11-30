@@ -1,0 +1,306 @@
+// Sistema de Gestión de Turnos para Canchas
+// Schema definitivo basado en requerimientos
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USUARIOS Y AUTENTICACIÓN
+// ============================================
+
+enum RolUsuario {
+  SUPERADMIN  // Administra múltiples complejos
+  DUENO       // Dueño de un complejo
+  EMPLEADO    // Empleado de un complejo (solo trabaja en UNO)
+  CLIENTE     // Usuario registrado que reserva
+}
+
+model Usuario {
+  id        String     @id @default(cuid())
+  email     String?    @unique
+  telefono  String     @unique
+  dni       String?    @unique
+  nombre    String
+  apellido  String
+  rol       RolUsuario @default(CLIENTE)
+  password  String?    // Para login (hasheado)
+  
+  // Si es EMPLEADO/DUENO - trabaja en UN solo complejo
+  complejoId String?
+  complejo   Complejo? @relation(fields: [complejoId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones
+  complejosPropios Complejo[] @relation("ComplejosPropietario") // Si es SUPERADMIN
+  turnos           Turno[]
+  turnosFijos      TurnoFijo[]
+  
+  @@index([telefono])
+  @@index([dni])
+}
+
+// ============================================
+// COMPLEJOS Y CONFIGURACIÓN
+// ============================================
+
+model Complejo {
+  id          String   @id @default(cuid())
+  nombre      String
+  direccion   String
+  telefono    String
+  email       String?
+  
+  // Datos para transferencia
+  cbu         String?
+  alias       String?
+  titular     String?
+  
+  // Configuración de señas
+  requiereSeña       Boolean @default(true)
+  porcentajeSeña     Int     @default(50)      // % del total
+  minutosExpiracion  Int     @default(30)      // tiempo para enviar seña
+  permiteTurnosFijos Boolean @default(true)
+  
+  // WhatsApp para notificaciones (futuro)
+  numeroWhatsapp String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones
+  propietarioId String?
+  propietario   Usuario?  @relation("ComplejosPropietario", fields: [propietarioId], references: [id])
+  
+  empleados  Usuario[]  // Empleados que trabajan acá
+  canchas    Cancha[]
+  deportes   Deporte[]
+  turnos     Turno[]
+}
+
+// ============================================
+// DEPORTES
+// ============================================
+
+model Deporte {
+  id        String   @id @default(cuid())
+  nombre    String   // "Fútbol 5", "Fútbol 7", "Pádel"
+  icono     String?  // emoji o nombre de icono
+  
+  complejoId String
+  complejo   Complejo @relation(fields: [complejoId], references: [id], onDelete: Cascade)
+  
+  canchas   Cancha[]
+  
+  @@unique([complejoId, nombre])
+}
+
+// ============================================
+// CANCHAS Y CONFIGURACIÓN DE HORARIOS
+// ============================================
+
+enum EstadoCancha {
+  HABILITADA
+  DESHABILITADA
+  EN_MANTENIMIENTO
+}
+
+model Cancha {
+  id          String       @id @default(cuid())
+  nombre      String       // "Cancha 1", "Cancha techada"
+  descripcion String?
+  estado      EstadoCancha @default(HABILITADA)
+  
+  // Precio base por hora
+  precioBase  Decimal @db.Decimal(10, 2)
+  
+  complejoId  String
+  complejo    Complejo @relation(fields: [complejoId], references: [id], onDelete: Cascade)
+  
+  deporteId   String
+  deporte     Deporte  @relation(fields: [deporteId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones
+  configuracionHorarios ConfiguracionHorarioCancha[]
+  preciosDinamicos      PrecioDinamico[]
+  turnos                Turno[]
+  turnosFijos           TurnoFijo[]
+  
+  @@unique([complejoId, nombre])
+}
+
+// Configuración de horarios por día de semana
+// Define: "Esta cancha funciona los Lunes de 9 a 23hs con turnos de 60min"
+// Los turnos se generan automáticamente hacia el futuro de forma indefinida
+model ConfiguracionHorarioCancha {
+  id              String   @id @default(cuid())
+  diaSemana       Int      // 0=Domingo, 1=Lunes, ..., 6=Sábado
+  horaInicio      String   // "09:00"
+  horaFin         String   // "23:00"
+  duracionTurno   Int      // Minutos (60, 90, 120)
+  activo          Boolean  @default(true)
+  
+  // Control de generación automática
+  diasAdelante    Int      @default(30) // Genera turnos para los próximos X días
+  ultimaGeneracion DateTime? // Última vez que se generaron turnos
+  
+  canchaId        String
+  cancha          Cancha   @relation(fields: [canchaId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([canchaId, diaSemana])
+}
+
+// Precios dinámicos: descuentos o recargos por día
+// Ejemplo: "Sábados +20%" o "Martes -15%"
+model PrecioDinamico {
+  id              String   @id @default(cuid())
+  diaSemana       Int      // 0-6
+  porcentaje      Int      // +20 o -15 (puede ser positivo o negativo)
+  descripcion     String?  // "Recargo fin de semana"
+  
+  canchaId        String
+  cancha          Cancha   @relation(fields: [canchaId], references: [id], onDelete: Cascade)
+  
+  @@unique([canchaId, diaSemana])
+}
+
+// ============================================
+// TURNOS Y RESERVAS
+// ============================================
+
+enum EstadoTurno {
+  DISPONIBLE
+  RESERVADO           // Pendiente de seña
+  SENA_ENVIADA        // Usuario envió comprobante (por WhatsApp)
+  CONFIRMADO          // Dueño validó el pago
+  CANCELADO           // Rechazado o cancelado
+  EXPIRADO            // Pasó el tiempo límite sin pago
+  AUSENTE             // Cliente no se presentó
+  BLOQUEADO           // Turno fijo (no se puede reservar)
+}
+
+model Turno {
+  id          String      @id @default(cuid())
+  fecha       DateTime    // Fecha y hora inicio del turno
+  duracion    Int         // Minutos
+  estado      EstadoTurno @default(DISPONIBLE)
+  
+  // === DATOS DEL CLIENTE (obligatorios si no hay usuario) ===
+  dni              String?
+  nombreCliente    String?
+  apellidoCliente  String?
+  telefonoCliente  String?
+  
+  // Precio calculado (base + ajustes dinámicos)
+  precioTotal      Decimal  @db.Decimal(10, 2)
+  montoSeña        Decimal? @db.Decimal(10, 2)
+  
+  // Timestamps
+  fechaReserva      DateTime? // Cuándo se reservó
+  fechaExpiracion   DateTime? // Límite para enviar seña
+  fechaConfirmacion DateTime? // Cuándo se confirmó el pago
+  
+  // Relaciones
+  canchaId    String
+  cancha      Cancha   @relation(fields: [canchaId], references: [id])
+  
+  complejoId  String
+  complejo    Complejo @relation(fields: [complejoId], references: [id])
+  
+  usuarioId   String?
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id])
+  
+  turnoFijoId String?
+  turnoFijo   TurnoFijo? @relation(fields: [turnoFijoId], references: [id])
+  
+  pago        Pago?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([fecha, canchaId])
+  @@index([estado])
+  @@index([dni])
+  @@index([telefonoCliente])
+}
+
+// ============================================
+// PAGOS (SIMPLIFICADO)
+// ============================================
+
+enum MetodoPago {
+  TRANSFERENCIA
+  EFECTIVO
+  MERCADOPAGO
+  OTRO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  ENVIADO      // Usuario dice que envió (por WhatsApp)
+  APROBADO     
+  RECHAZADO
+}
+
+model Pago {
+  id          String      @id @default(cuid())
+  monto       Decimal     @db.Decimal(10, 2)
+  metodo      MetodoPago  @default(TRANSFERENCIA)
+  estado      EstadoPago  @default(PENDIENTE)
+  
+  // Fechas importantes
+  fechaEnvio      DateTime?
+  fechaValidacion DateTime?
+  
+  // Motivo si se rechaza
+  motivoRechazo   String?
+  
+  turnoId     String   @unique
+  turno       Turno    @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// TURNOS FIJOS (ABONOS)
+// ============================================
+
+model TurnoFijo {
+  id          String   @id @default(cuid())
+  diaSemana   Int      // 0-6
+  horaInicio  String   // "19:00"
+  duracion    Int      // Minutos
+  
+  activo      Boolean  @default(true)
+  fechaInicio DateTime
+  fechaFin    DateTime? // null = indefinido
+  
+  // Cliente con cuenta
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  
+  canchaId    String
+  cancha      Cancha   @relation(fields: [canchaId], references: [id])
+  
+  // Turnos generados a partir de este fijo
+  turnosGenerados Turno[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([canchaId, diaSemana, horaInicio])
+}
