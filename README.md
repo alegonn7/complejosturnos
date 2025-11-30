@@ -209,25 +209,3 @@ EnMantenimiento --> Habilitada
 
 @enduml
 
-🚀 Futuras Mejoras
-
-Integración con WhatsApp Business API para recibir comprobantes directamente.
-
-Pago automático con Mercado Pago / Stripe.
-
-Notificaciones push / email.
-
-Motor de recomendaciones de horarios.
-
-Doble autenticación para administradores.
-
-📄 Licencia
-
-MIT License — libre para usar, modificar y distribuir.
-
-Si querés, te genero también:
-
-✅ logo y branding
-✅ estructura de carpetas del repo
-✅ documentación técnica de API (OpenAPI/Swagger)
-✅ wireframes del flujo de reserva
