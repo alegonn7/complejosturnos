@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Instalar dependencias globales
+RUN npm install -g turbo
+
+# Copiar archivos de configuración
+COPY package*.json ./
+COPY turbo.json ./
+
+# Copiar packages compartidos
+COPY packages ./packages
+
+# Copiar cliente
+COPY apps/cliente ./apps/cliente
+
+# Instalar dependencias
+RUN npm install
+
+# Exponer puerto
+EXPOSE 3000
+
+# Hot reload de Next.js
+CMD ["npm", "run", "dev", "--workspace=cliente"]

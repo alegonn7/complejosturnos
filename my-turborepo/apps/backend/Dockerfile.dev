@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Instalar dependencias globales
+RUN npm install -g tsx turbo
+
+# Copiar package.json de la raíz y workspaces
+COPY package*.json ./
+COPY turbo.json ./
+
+# Copiar packages
+COPY packages ./packages
+
+# Copiar backend
+COPY apps/backend ./apps/backend
+
+# Instalar todas las dependencias
+RUN npm install
+
+# Exponer puerto
+EXPOSE 4000
+
+# Hot reload con tsx
+CMD ["npm", "run", "dev", "--workspace=backend"]

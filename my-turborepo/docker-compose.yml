@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: canchas-db-dev
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: canchas_user
+      POSTGRES_PASSWORD: canchas_password_dev
+      POSTGRES_DB: canchas_db
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - canchas-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U canchas_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (para cache y jobs futuros)
+  redis:
+    image: redis:7-alpine
+    container_name: canchas-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - canchas-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API (con hot reload)
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile.dev
+    container_name: canchas-backend-dev
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://canchas_user:canchas_password_dev@postgres:5432/canchas_db
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./apps/backend:/app/apps/backend
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - canchas-network
+    command: npm run dev
+
+  # Frontend Cliente (con hot reload)
+  cliente:
+    build:
+      context: .
+      dockerfile: apps/cliente/Dockerfile.dev
+    container_name: canchas-cliente-dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    volumes:
+      - ./apps/cliente:/app/apps/cliente
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/cliente/node_modules
+      - /app/apps/cliente/.next
+    depends_on:
+      - backend
+    networks:
+      - canchas-network
+    command: npm run dev
+
+  # Frontend Admin (con hot reload)
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile.dev
+    container_name: canchas-admin-dev
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    volumes:
+      - ./apps/admin:/app/apps/admin
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/admin/node_modules
+      - /app/apps/admin/.next
+    depends_on:
+      - backend
+    networks:
+      - canchas-network
+    command: npm run dev
+
+volumes:
+  postgres_data_dev:
+
+networks:
+  canchas-network:
+    driver: bridge
