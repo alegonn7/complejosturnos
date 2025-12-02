@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import * as bcrypt from 'bcrypt';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -21,10 +22,15 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Seeding database...');
 
+  // Hashear la contraseña
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+
   // Crear un superadmin
   const superadmin = await prisma.usuario.upsert({
     where: { email: 'admin@canchas.com' },
-    update: {},
+    update: {
+      password: hashedPassword, // Actualizar si ya existe
+    },
     create: {
       email: 'admin@canchas.com',
       telefono: '+5491112345678',
@@ -32,11 +38,13 @@ async function main() {
       nombre: 'Admin',
       apellido: 'Sistema',
       rol: 'SUPERADMIN',
-      password: 'admin123', // En producción esto debe estar hasheado!
+      password: hashedPassword, // Crear con hash
     },
   });
 
   console.log('✅ Superadmin creado:', superadmin.email);
+  console.log('📧 Email: admin@canchas.com');
+  console.log('🔑 Password: admin123');
 
   // Crear un complejo de ejemplo
   const complejo = await prisma.complejo.create({
@@ -163,9 +171,11 @@ async function main() {
 main()
   .then(async () => {
     await prisma.$disconnect();
+    await pool.end();
   })
   .catch(async (e) => {
     console.error('❌ Error en seed:', e);
     await prisma.$disconnect();
+    await pool.end();
     process.exit(1);
   });

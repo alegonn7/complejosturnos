@@ -1,12 +1,15 @@
-import { IsString, IsNotEmpty, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
 
 export class LoginDto {
   @IsString()
   @IsNotEmpty()
-  telefono: string;
+  identifier: string;
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
   password: string;
+
+  @IsBoolean()
+  @IsOptional()
+  rememberMe?: boolean; // Nueva propiedad
 }

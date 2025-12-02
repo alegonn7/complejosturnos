@@ -14,7 +14,7 @@ export class AuthController {
   @Public()
   @Post('register')
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) response: Response) {
-        const result = await this.authService.register(registerDto);
+    const result = await this.authService.register(registerDto);
 
     response.cookie('access_token', result.access_token, {
       httpOnly: true,
@@ -32,11 +32,16 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(loginDto);
 
+    // Duración basada en "recordarme"
+    const maxAge = loginDto.rememberMe
+      ? 30 * 24 * 60 * 60 * 1000  // 30 días
+      : 24 * 60 * 60 * 1000;       // 1 día
+
     response.cookie('access_token', result.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge,
     });
 
     return { usuario: result.usuario };

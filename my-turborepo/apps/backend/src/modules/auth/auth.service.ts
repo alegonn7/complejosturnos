@@ -10,7 +10,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const existingUser = await this.prisma.usuario.findUnique({
@@ -62,21 +62,28 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { telefono: loginDto.telefono },
+    const { identifier, password, rememberMe } = loginDto;
+
+    const isEmail = identifier.includes('@');
+
+    const usuario = await this.prisma.usuario.findFirst({
+      where: isEmail
+        ? { email: identifier }
+        : { telefono: identifier },
     });
 
     if (!usuario || !usuario.password) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, usuario.password);
+    const isPasswordValid = await bcrypt.compare(password, usuario.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const token = this.generateToken(usuario.id);
+    // Token con expiración acorde
+    const token = this.generateToken(usuario.id, rememberMe);
 
     return {
       usuario: {
@@ -89,6 +96,13 @@ export class AuthService {
       },
       access_token: token,
     };
+  }
+
+  private generateToken(userId: string, rememberMe = false): string {
+    const payload = { sub: userId };
+    const expiresIn = rememberMe ? '30d' : '1d';
+
+    return this.jwtService.sign(payload, { expiresIn });
   }
 
   async getProfile(userId: string) {
@@ -108,8 +122,4 @@ export class AuthService {
     });
   }
 
-  private generateToken(userId: string): string {
-    const payload = { sub: userId };
-    return this.jwtService.sign(payload);
-  }
 }
