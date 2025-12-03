@@ -51,6 +51,10 @@ model Complejo {
   alias       String?
   titular     String?
   
+  mercadoPagoAccessToken  String?
+  mercadoPagoPublicKey    String?
+  mercadoPagoQR           String? 
+
   requiereSeña       Boolean @default(true)
   porcentajeSeña     Int     @default(50)
   minutosExpiracion  Int     @default(30)
@@ -247,6 +251,8 @@ model TurnoFijo {
   fechaInicio DateTime
   fechaFin    DateTime?
   
+  requiereSeña Boolean @default(true)  // NUEVO
+  
   usuarioId   String
   usuario     Usuario  @relation(fields: [usuarioId], references: [id])
   
@@ -254,9 +260,21 @@ model TurnoFijo {
   cancha      Cancha   @relation(fields: [canchaId], references: [id])
   
   turnosGenerados Turno[]
+  historial       HistorialTurnoFijo[]  // NUEVO
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   @@unique([canchaId, diaSemana, horaInicio])
+}
+
+model HistorialTurnoFijo {
+  id          String   @id @default(cuid())
+  turnoFijoId String
+  accion      String   // "CREADO", "PAUSADO", "REACTIVADO", "CANCHA_CAMBIADA", "CANCELADO"
+  detalle     String?
+  usuarioId   String?  // Quién realizó la acción
+  createdAt   DateTime @default(now())
+  
+  turnoFijo   TurnoFijo @relation(fields: [turnoFijoId], references: [id], onDelete: Cascade)
 }
