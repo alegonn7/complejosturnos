@@ -850,3 +850,491 @@ switch (periodo) {
 
 return { fechaInicioAnterior, fechaFinAnterior };
 }
+private async calcularMetricasPeriodo(complejoId: string, fechaInicio: Date, fechaFin: Date) {
+    const turnos = await this.prisma.turno.findMany({
+      where: {
+        complejoId,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+      },
+      include: {
+        cancha: {
+          select: {
+            nombre: true,
+            deporte: {
+              select: {
+                nombre: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const totales = turnos.length;
+    const confirmados = turnos.filter(t => t.estado === 'CONFIRMADO').length;
+    const cancelados = turnos.filter(t => t.estado === 'CANCELADO').length;
+    const ausentes = turnos.filter(t => t.estado === 'AUSENTE').length;
+
+    const tasaCancelacion = totales > 0 ? (cancelados / totales) * 100 : 0;
+    const tasaAusencias = confirmados > 0 ? (ausentes / confirmados) * 100 : 0;
+
+    // Calcular ocupación
+    const disponibles = turnos.filter(t => t.estado === 'DISPONIBLE').length;
+    const reservados = turnos.filter(t => t.estado === 'RESERVADO' || t.estado === 'SENA_ENVIADA').length;
+    const ocupados = confirmados + reservados;
+    const tasaOcupacion = totales > 0 ? (ocupados / totales) * 100 : 0;
+
+    // Ingresos
+    const ingresosBrutos = turnos
+      .filter(t => t.estado === 'CONFIRMADO')
+      .reduce((sum, t) => sum + Number(t.precioTotal), 0);
+
+    const promedioPorTurno = confirmados > 0 ? ingresosBrutos / confirmados : 0;
+
+    // Clientes
+    const telefonosUnicos = new Set(
+      turnos
+        .filter(t => t.telefonoCliente)
+        .map(t => t.telefonoCliente)
+    );
+
+    const clientesTotales = telefonosUnicos.size;
+
+    // Clientes nuevos (primera reserva en este período)
+    const clientesNuevos = await this.contarClientesNuevos(complejoId, fechaInicio, fechaFin);
+
+    const clientesRecurrentes = clientesTotales - clientesNuevos;
+    const tasaRetencion = clientesTotales > 0 ? (clientesRecurrentes / clientesTotales) * 100 : 0;
+
+    // Mejor y peor cancha
+    const canchaStats = this.calcularStatsPorCancha(turnos);
+    const mejorCancha = canchaStats.sort((a, b) => b.ocupacion - a.ocupacion)[0] || null;
+    const peorCancha = canchaStats.sort((a, b) => a.ocupacion - b.ocupacion)[0] || null;
+
+    return {
+      fechaInicio: fechaInicio.toISOString(),
+      fechaFin: fechaFin.toISOString(),
+      turnos: {
+        totales,
+        confirmados,
+        cancelados,
+        ausentes,
+        tasaCancelacion: Math.round(tasaCancelacion * 10) / 10,
+        tasaAusencias: Math.round(tasaAusencias * 10) / 10,
+        tasaOcupacion: Math.round(tasaOcupacion * 10) / 10,
+      },
+      ingresos: {
+        brutos: Math.round(ingresosBrutos),
+        promedioPorTurno: Math.round(promedioPorTurno),
+      },
+      clientes: {
+        totales: clientesTotales,
+        nuevos: clientesNuevos,
+        recurrentes: clientesRecurrentes,
+        tasaRetencion: Math.round(tasaRetencion * 10) / 10,
+      },
+      mejorCancha: mejorCancha ? {
+        nombre: mejorCancha.nombre,
+        ocupacion: mejorCancha.ocupacion,
+        ingresos: mejorCancha.ingresos,
+      } : null,
+      peorCancha: peorCancha ? {
+        nombre: peorCancha.nombre,
+        ocupacion: peorCancha.ocupacion,
+        ingresos: peorCancha.ingresos,
+      } : null,
+    };
+  }
+
+  private calcularStatsPorCancha(turnos: any[]) {
+    const canchaMap = new Map<string, any>();
+
+    for (const turno of turnos) {
+      const canchaId = turno.canchaId;
+      
+      if (!canchaMap.has(canchaId)) {
+        canchaMap.set(canchaId, {
+          nombre: turno.cancha.nombre,
+          totales: 0,
+          confirmados: 0,
+          ingresos: 0,
+        });
+      }
+
+      const stats = canchaMap.get(canchaId);
+      stats.totales++;
+
+      if (turno.estado === 'CONFIRMADO') {
+        stats.confirmados++;
+        stats.ingresos += Number(turno.precioTotal);
+      }
+    }
+
+    return Array.from(canchaMap.values()).map(stats => ({
+      nombre: stats.nombre,
+      ocupacion: stats.totales > 0 ? Math.round((stats.confirmados / stats.totales) * 100 * 10) / 10 : 0,
+      ingresos: Math.round(stats.ingresos),
+    }));
+  }
+
+  private async contarClientesNuevos(complejoId: string, fechaInicio: Date, fechaFin: Date): Promise<number> {
+    const turnosEnPeriodo = await this.prisma.turno.findMany({
+      where: {
+        complejoId,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+        telefonoCliente: {
+          not: null,
+        },
+      },
+      select: {
+        telefonoCliente: true,
+      },
+      distinct: ['telefonoCliente'],
+    });
+
+    let clientesNuevos = 0;
+
+    for (const turno of turnosEnPeriodo) {
+      // Verificar si es la primera reserva del cliente
+      const primerTurno = await this.prisma.turno.findFirst({
+        where: {
+          complejoId,
+          telefonoCliente: turno.telefonoCliente,
+        },
+        orderBy: {
+          fechaReserva: 'asc',
+        },
+      });
+
+      if (primerTurno && primerTurno.fechaReserva) {
+        if (primerTurno.fechaReserva >= fechaInicio && primerTurno.fechaReserva <= fechaFin) {
+          clientesNuevos++;
+        }
+      }
+    }
+
+    return clientesNuevos;
+  }
+
+  private compararPeriodos(actual: any, anterior: any) {
+    const calcularVariacion = (actual: number, anterior: number) => {
+      if (anterior === 0) return actual > 0 ? '+100%' : '0%';
+      const variacion = ((actual - anterior) / anterior) * 100;
+      return `${variacion >= 0 ? '+' : ''}${Math.round(variacion * 10) / 10}%`;
+    };
+
+    const calcularDiferencia = (actual: number, anterior: number) => {
+      return actual - anterior;
+    };
+
+    return {
+      turnos: {
+        variacion: calcularVariacion(actual.turnos.totales, anterior.turnos.totales),
+        diferencia: calcularDiferencia(actual.turnos.totales, anterior.turnos.totales),
+      },
+      ingresos: {
+        variacion: calcularVariacion(actual.ingresos.brutos, anterior.ingresos.brutos),
+        diferencia: calcularDiferencia(actual.ingresos.brutos, anterior.ingresos.brutos),
+      },
+      ocupacion: {
+        variacion: calcularVariacion(actual.turnos.tasaOcupacion, anterior.turnos.tasaOcupacion),
+        diferencia: Math.round((actual.turnos.tasaOcupacion - anterior.turnos.tasaOcupacion) * 10) / 10,
+      },
+      clientes: {
+        variacion: calcularVariacion(actual.clientes.totales, anterior.clientes.totales),
+        diferencia: calcularDiferencia(actual.clientes.totales, anterior.clientes.totales),
+      },
+    };
+  }
+
+  private async calcularTendencias(complejoId: string, periodo: string) {
+    const periodos = [];
+    const hoy = new Date();
+
+    // Calcular últimos 4 períodos
+    for (let i = 3; i >= 0; i--) {
+      let fechaInicio: Date;
+      let fechaFin: Date;
+
+      switch (periodo) {
+        case 'semanal':
+          fechaFin = new Date(hoy);
+          fechaFin.setDate(hoy.getDate() - (i * 7));
+          fechaInicio = new Date(fechaFin);
+          fechaInicio.setDate(fechaFin.getDate() - 7);
+          break;
+
+        case 'mensual':
+          fechaFin = new Date(hoy.getFullYear(), hoy.getMonth() - i, 0);
+          fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - i - 1, 1);
+          break;
+
+        case 'anual':
+          fechaFin = new Date(hoy.getFullYear() - i, 11, 31);
+          fechaInicio = new Date(hoy.getFullYear() - i, 0, 1);
+          break;
+
+        default:
+          continue;
+      }
+
+      periodos.push({ fechaInicio, fechaFin });
+    }
+
+    const ocupacion = [];
+    const ingresos = [];
+    const turnos = [];
+
+    for (const { fechaInicio, fechaFin } of periodos) {
+      const metricas = await this.calcularMetricasPeriodo(complejoId, fechaInicio, fechaFin);
+      ocupacion.push(metricas.turnos.tasaOcupacion);
+      ingresos.push(metricas.ingresos.brutos);
+      turnos.push(metricas.turnos.totales);
+    }
+
+    return {
+      ocupacion,
+      ingresos,
+      turnos,
+    };
+  }
+
+  private generarInsights(actual: any, comparacion: any, tendencias: any): string[] {
+    const insights: string[] = [];
+
+    // Insight de crecimiento
+    if (comparacion && comparacion.turnos.diferencia > 0) {
+      const porcentaje = parseFloat(comparacion.turnos.variacion);
+      if (porcentaje >= 10) {
+        insights.push(`📈 Crecimiento destacado de ${comparacion.turnos.variacion} en turnos`);
+      } else {
+        insights.push(`📈 Crecimiento sostenido de ${comparacion.turnos.variacion} en turnos`);
+      }
+    } else if (comparacion && comparacion.turnos.diferencia < 0) {
+      insights.push(`📉 Disminución de ${comparacion.turnos.variacion} en turnos. Revisar estrategia`);
+    }
+
+    // Insight de cancha con baja ocupación
+    if (actual.peorCancha && actual.peorCancha.ocupacion < 50) {
+      insights.push(`⚠️ ${actual.peorCancha.nombre} tiene baja ocupación (${actual.peorCancha.ocupacion}%), considera promociones`);
+    }
+
+    // Insight de ausencias
+    if (actual.turnos.tasaAusencias > 10) {
+      insights.push(`⚠️ Tasa de ausencias alta (${actual.turnos.tasaAusencias}%), considera política de multas`);
+    }
+
+    // Insight de clientes nuevos
+    if (comparacion && comparacion.clientes.diferencia > 0) {
+      insights.push(`👥 ${actual.clientes.nuevos} clientes nuevos, ${comparacion.clientes.variacion} vs período anterior`);
+    }
+
+    // Insight de mejor cancha
+    if (actual.mejorCancha && actual.mejorCancha.ocupacion > 80) {
+      insights.push(`🎯 ${actual.mejorCancha.nombre} es la más popular con ${actual.mejorCancha.ocupacion}% de ocupación`);
+    }
+
+    // Insight de ingresos
+    if (comparacion && parseFloat(comparacion.ingresos.variacion) >= 15) {
+      insights.push(`💰 Excelente desempeño: ingresos crecieron ${comparacion.ingresos.variacion}`);
+    }
+
+    // Insight de tendencia
+    if (tendencias.ocupacion.length >= 3) {
+      const ultimosTres = tendencias.ocupacion.slice(-3);
+      const creciente = ultimosTres[0] < ultimosTres[1] && ultimosTres[1] < ultimosTres[2];
+      
+      if (creciente) {
+        insights.push(`📊 Tendencia positiva: ocupación mejorando constantemente`);
+      }
+    }
+
+    return insights.length > 0 ? insights : ['✅ Operación estable sin alertas'];
+  }
+
+  private calcularRangoFechas(filtrosDto: FiltrosEstadisticasDto) {
+    const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999);
+
+    const hace30Dias = new Date(hoy);
+    hace30Dias.setDate(hoy.getDate() - 30);
+    hace30Dias.setHours(0, 0, 0, 0);
+
+    const fechaInicio = filtrosDto.fechaInicio ? new Date(filtrosDto.fechaInicio) : hace30Dias;
+    const fechaFin = filtrosDto.fechaFin ? new Date(filtrosDto.fechaFin) : hoy;
+
+    return { fechaInicio, fechaFin };
+  }
+
+  private async agruparTurnosPorFecha(
+    complejoId: string,
+    fechaInicio: Date,
+    fechaFin: Date,
+    agruparPor: 'dia' | 'semana' | 'mes',
+  ) {
+    const turnos = await this.prisma.turno.findMany({
+      where: {
+        complejoId,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+      },
+      select: {
+        fecha: true,
+        estado: true,
+      },
+    });
+
+    const agrupado = new Map<string, number>();
+
+    for (const turno of turnos) {
+      let key: string;
+
+      switch (agruparPor) {
+        case 'dia':
+          key = turno.fecha.toISOString().split('T')[0];
+          break;
+        case 'semana':
+          const semana = this.getWeekNumber(turno.fecha);
+          key = `${turno.fecha.getFullYear()}-W${semana}`;
+          break;
+        case 'mes':
+          key = `${turno.fecha.getFullYear()}-${(turno.fecha.getMonth() + 1).toString().padStart(2, '0')}`;
+          break;
+      }
+
+      agrupado.set(key, (agrupado.get(key) || 0) + 1);
+    }
+
+    return Array.from(agrupado.entries()).map(([fecha, cantidad]) => ({
+      fecha,
+      cantidad,
+    })).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }
+
+  private async agruparIngresosPorFecha(
+    complejoId: string,
+    fechaInicio: Date,
+    fechaFin: Date,
+    agruparPor: 'dia' | 'semana' | 'mes',
+  ) {
+    const turnos = await this.prisma.turno.findMany({
+      where: {
+        complejoId,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+        estado: 'CONFIRMADO',
+      },
+      select: {
+        fecha: true,
+        precioTotal: true,
+      },
+    });
+
+    const agrupado = new Map<string, number>();
+
+    for (const turno of turnos) {
+      let key: string;
+
+      switch (agruparPor) {
+        case 'dia':
+          key = turno.fecha.toISOString().split('T')[0];
+          break;
+        case 'semana':
+          const semana = this.getWeekNumber(turno.fecha);
+          key = `${turno.fecha.getFullYear()}-W${semana}`;
+          break;
+        case 'mes':
+          key = `${turno.fecha.getFullYear()}-${(turno.fecha.getMonth() + 1).toString().padStart(2, '0')}`;
+          break;
+      }
+
+      agrupado.set(key, (agrupado.get(key) || 0) + Number(turno.precioTotal));
+    }
+
+    return Array.from(agrupado.entries()).map(([fecha, ingresos]) => ({
+      fecha,
+      ingresos: Math.round(ingresos),
+    })).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }
+
+  private async calcularTurnosPorHorario(complejoId: string, fechaInicio: Date, fechaFin: Date) {
+    const turnos = await this.prisma.turno.findMany({
+      where: {
+        complejoId,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+        estado: 'CONFIRMADO',
+      },
+      select: {
+        fecha: true,
+      },
+    });
+
+    const porHorario = new Map<number, number>();
+
+    for (const turno of turnos) {
+      const hora = turno.fecha.getHours();
+      porHorario.set(hora, (porHorario.get(hora) || 0) + 1);
+    }
+
+    return Array.from(porHorario.entries())
+      .map(([hora, cantidad]) => ({
+        horario: `${hora.toString().padStart(2, '0')}:00`,
+        cantidad,
+      }))
+      .sort((a, b) => a.horario.localeCompare(b.horario));
+  }
+
+  private async calcularTurnosPorDiaSemana(complejoId: string, fechaInicio: Date, fechaFin: Date) {
+    const turnos = await this.prisma.turno.findMany({
+      where: {
+        complejoId,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+        estado: 'CONFIRMADO',
+      },
+      select: {
+        fecha: true,
+      },
+    });
+
+    const porDia = new Map<number, number>();
+
+    for (const turno of turnos) {
+      const dia = turno.fecha.getDay();
+      porDia.set(dia, (porDia.get(dia) || 0) + 1);
+    }
+
+    const nombresDias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+    return Array.from(porDia.entries())
+      .map(([dia, cantidad]) => ({
+        dia: nombresDias[dia],
+        diaSemana: dia,
+        cantidad,
+      }))
+      .sort((a, b) => a.diaSemana - b.diaSemana);
+  }
+
+  private getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  }
+}

@@ -11,9 +11,9 @@ import { CanchasModule } from './modules/canchas/canchas.module.js';
 import { TurnosModule } from './modules/turnos/turnos.module.js';
 import { PagosModule } from './modules/pagos/pagos.module.js';
 import { TurnosFijosModule } from './modules/turnos-fijos/turnos-fijos.module.js';
+import { EstadisticasModule } from './modules/estadisticas/estadisticas.module.js';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
-import { EstadisticasModule } from './modules/estadisticas/estadisticas.module';
 
 @Module({
   imports: [
@@ -43,4 +43,4 @@ import { EstadisticasModule } from './modules/estadisticas/estadisticas.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {}   

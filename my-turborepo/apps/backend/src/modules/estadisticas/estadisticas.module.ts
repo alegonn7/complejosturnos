@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { EstadisticasController } from './estadisticas.controller';
-import { EstadisticasService } from './estadisticas.service';
+import { EstadisticasService } from './estadisticas.service.js';
+import { EstadisticasController } from './estadisticas.controller.js';
+import { PrismaModule } from '../prisma/prisma.module.js';
 
 @Module({
+  imports: [PrismaModule],
   controllers: [EstadisticasController],
-  providers: [EstadisticasService]
+  providers: [EstadisticasService],
+  exports: [EstadisticasService],
 })
 export class EstadisticasModule {}
