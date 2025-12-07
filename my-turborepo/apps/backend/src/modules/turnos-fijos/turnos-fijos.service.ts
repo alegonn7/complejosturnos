@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateTurnoFijoDto } from './dto/create-turno-fijo.dto.js';
 import { UpdateTurnoFijoDto } from './dto/update-turno-fijo.dto.js';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@canchas/database';
 
 @Injectable()
 export class TurnosFijosService {
@@ -574,8 +574,8 @@ export class TurnosFijosService {
               fecha: fechaTurno,
               duracion: turnoFijo.duracion,
               estado: estadoInicial,
-              precioTotal: new Decimal(precioTotal.toFixed(2)),
-              montoSeña: montoSeña ? new Decimal(montoSeña.toFixed(2)) : null,
+              precioTotal: new Prisma.Decimal(precioTotal.toFixed(2)),
+              montoSeña: montoSeña ? new Prisma.Decimal(montoSeña.toFixed(2)) : null,
               fechaExpiracion,
               fechaReserva: estadoInicial === 'RESERVADO' ? new Date() : null,
               fechaConfirmacion: estadoInicial === 'CONFIRMADO' ? new Date() : null,

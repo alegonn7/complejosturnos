@@ -6,7 +6,7 @@ import { UpdateTurnoDto } from './dto/update-turno.dto.js';
 import { CancelarTurnoDto } from './dto/cancelar-turno.dto.js';
 import { MarcarAusenteDto } from './dto/marcar-ausente.dto.js';
 import { ConsultarDisponibilidadDto } from './dto/consultar-disponibilidad.dto.js';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@canchas/database';
 
 @Injectable()
 export class TurnosService {
@@ -108,7 +108,7 @@ export class TurnosService {
                     turnosGenerados.push({
                         fecha: new Date(horaActual),
                         duracion: config.duracionTurno,
-                        precioTotal: new Decimal(precioTotal.toFixed(2)),
+                        precioTotal: new Prisma.Decimal(precioTotal.toFixed(2)),
                         estado: 'DISPONIBLE' as const,
                         canchaId,
                         complejoId: cancha.complejoId,
@@ -263,7 +263,7 @@ export class TurnosService {
                 apellidoCliente,
                 dni,
                 usuarioId: userId || null,
-                montoSeña: montoSeña ? new Decimal(montoSeña.toFixed(2)) : null,
+                montoSeña: montoSeña ? new Prisma.Decimal(montoSeña.toFixed(2)) : null,
                 fechaReserva: new Date(),
                 fechaExpiracion,
                 fechaConfirmacion: requiereSeña ? null : new Date(),

@@ -1,31 +1,18 @@
 'use client';
 
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import React from 'react'; // ✅ AGREGADO
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useState } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
+  const Devtools = ReactQueryDevtools as unknown as React.FC;
+
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* Devtools solo en desarrollo */}
-      {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtoolsLazy />
-      )}
+      {process.env.NODE_ENV === 'development' && <Devtools />}
     </QueryClientProvider>
   );
-}
-
-// Lazy load devtools
-function ReactQueryDevtoolsLazy() {
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
-  const { ReactQueryDevtools } = require('@tanstack/react-query-devtools');
-  return <ReactQueryDevtools initialIsOpen={false} />;
 }

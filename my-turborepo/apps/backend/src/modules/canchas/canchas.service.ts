@@ -7,7 +7,7 @@ import { CreateConfiguracionHorarioDto } from './dto/create-configuracion-horari
 import { UpdateConfiguracionHorarioDto } from './dto/update-configuracion-horario.dto.js';
 import { CreatePrecioDinamicoDto } from './dto/create-precio-dinamico.dto.js';
 import { UpdatePrecioDinamicoDto } from './dto/update-precio-dinamico.dto.js';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@canchas/database';
 
 @Injectable()
 export class CanchasService {
@@ -157,7 +157,7 @@ export class CanchasService {
     return this.prisma.cancha.create({
       data: {
         ...createCanchaDto,
-        precioBase: new Decimal(createCanchaDto.precioBase),
+        precioBase: new Prisma.Decimal(createCanchaDto.precioBase),
       },
       select: {
         id: true,
@@ -276,7 +276,7 @@ export class CanchasService {
 
     const dataToUpdate: any = { ...updateCanchaDto };
     if (updateCanchaDto.precioBase !== undefined) {
-      dataToUpdate.precioBase = new Decimal(updateCanchaDto.precioBase);
+      dataToUpdate.precioBase = new Prisma.Decimal(updateCanchaDto.precioBase);
     }
 
     return this.prisma.cancha.update({

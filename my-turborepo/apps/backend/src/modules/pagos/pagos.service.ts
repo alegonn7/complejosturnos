@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EnviarComprobanteDto } from './dto/enviar-comprobante.dto.js';
 import { RechazarPagoDto } from './dto/rechazar-pago.dto.js';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@canchas/database';
 
 @Injectable()
 export class PagosService {
@@ -52,7 +52,7 @@ export class PagosService {
     // Crear el pago
     const pago = await this.prisma.pago.create({
       data: {
-        monto: new Decimal(monto),
+        monto: new Prisma.Decimal(monto),
         metodo,
         estado: 'ENVIADO',
         fechaEnvio: new Date(),
@@ -348,7 +348,7 @@ export class PagosService {
     // Crear el pago en efectivo
     const pago = await this.prisma.pago.create({
       data: {
-        monto: new Decimal(monto),
+        monto: new Prisma.Decimal(monto),
         metodo: 'EFECTIVO',
         estado: 'APROBADO', // Efectivo se aprueba automáticamente
         fechaEnvio: new Date(),
