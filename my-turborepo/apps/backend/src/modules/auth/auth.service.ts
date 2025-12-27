@@ -1,17 +1,19 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { LoginDto } from './dto/login.dto.js';
-import { RegisterDto } from './dto/register.dto.js';
+import { PrismaService } from '../prisma/prisma.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-  ) { }
-
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {
+  }
+  onModuleInit() {
+  }
   async register(registerDto: RegisterDto) {
     const existingUser = await this.prisma.usuario.findUnique({
       where: { telefono: registerDto.telefono },
@@ -62,6 +64,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+
     const { identifier, password, rememberMe } = loginDto;
 
     const isEmail = identifier.includes('@');

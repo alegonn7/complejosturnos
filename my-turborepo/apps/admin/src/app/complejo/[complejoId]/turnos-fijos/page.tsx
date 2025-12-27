@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useTurnosFijos } from '@/hooks/useTurnosFijos';
@@ -15,8 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatDate, getDayName } from '@/lib/utils';
 import { TurnoFijo } from '@/types/api.types';
 
-function TurnosFijosContent({ params }: { params: Promise<{ complejoId: string }> }) {
-  const { complejoId } = use(params);
+function TurnosFijosContent({ params }: { params: { complejoId: string } }) {
+  const { complejoId } = params
   const { turnosFijos, isLoading, pausarTurnoFijo, reactivarTurnoFijo, cancelarTurnoFijo } = useTurnosFijos(complejoId);
 
   const [modalPausar, setModalPausar] = useState<TurnoFijo | null>(null);
@@ -245,7 +245,7 @@ function TurnosFijosContent({ params }: { params: Promise<{ complejoId: string }
   );
 }
 
-export default function TurnosFijosPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function TurnosFijosPage({ params }: { params: { complejoId: string } }) {
   return (
     <ProtectedRoute>
       <TurnosFijosContent params={params} />

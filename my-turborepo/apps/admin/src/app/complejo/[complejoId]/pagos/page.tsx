@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import {  useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { usePagos } from '@/hooks/usePagos';
@@ -16,8 +16,8 @@ import { formatPrice, formatDateTime, getTimeAgo } from '@/lib/utils';
 import { PAGO_COLORS, PAGO_LABELS, TURNO_LABELS } from '@/lib/constants';
 import { Pago } from '@/types/api.types';
 
-function PagosContent({ params }: { params: Promise<{ complejoId: string }> }) {
-  const { complejoId } = use(params);
+function PagosContent({ params }: { params: { complejoId: string } }) {
+  const { complejoId } = params
   const { pagosPendientes, isLoading, aprobarPago, rechazarPago } = usePagos(complejoId);
 
   const [modalAprobar, setModalAprobar] = useState<Pago | null>(null);
@@ -294,7 +294,7 @@ function PagosContent({ params }: { params: Promise<{ complejoId: string }> }) {
   );
 }
 
-export default function PagosPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function PagosPage({ params }: { params: { complejoId: string } }) {
   return (
     <ProtectedRoute>
       <PagosContent params={params} />

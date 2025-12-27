@@ -1,31 +1,31 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
   Delete,
   UseGuards,
   ForbiddenException,
   Req,
 } from '@nestjs/common';
-import { ComplejosService } from './complejos.service.js';
-import { CreateComplejoDto } from './dto/create-complejo.dto.js';
-import { UpdateComplejoDto } from './dto/update-complejo.dto.js';
-import { UpdateDatosBancariosDto } from './dto/update-datos-bancarios.dto.js';
-import { AsignarPropietarioDto } from './dto/asignar-propietario.dto.js';
-import { CreateEmpleadoDto } from './dto/create-empleado.dto.js';
-import { Public } from '../auth/decorators/public.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { ComplejoOwnershipGuard } from './guards/complejo-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { ComplejosService } from './complejos.service';
+import { CreateComplejoDto } from './dto/create-complejo.dto';
+import { UpdateComplejoDto } from './dto/update-complejo.dto';
+import { UpdateDatosBancariosDto } from './dto/update-datos-bancarios.dto';
+import { AsignarPropietarioDto } from './dto/asignar-propietario.dto';
+import { CreateEmpleadoDto } from './dto/create-empleado.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { ComplejoOwnershipGuard } from './guards/complejo-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('complejos')
 @UseGuards(RolesGuard)
 export class ComplejosController {
-  constructor(private readonly complejosService: ComplejosService) {}
+  constructor(private readonly complejosService: ComplejosService) { }
 
   // ============ PÚBLICO ============
   @Public()
@@ -40,6 +40,11 @@ export class ComplejosController {
     return this.complejosService.findOne(id);
   }
 
+  @Get('slug/:slug')
+  @Public()
+  findBySlug(@Param('slug') slug: string) {
+    return this.complejosService.findBySlug(slug);
+  }
   // ============ SUPERADMIN ============
   @Post()
   @Roles('SUPERADMIN')
@@ -52,7 +57,14 @@ export class ComplejosController {
   remove(@Param('id') id: string) {
     return this.complejosService.remove(id);
   }
-
+  @Patch(':id/slug')
+  @Roles('SUPERADMIN', 'DUENO')
+  updateSlug(
+    @Param('id') id: string,
+    @Body('slug') slug: string
+  ) {
+    return this.complejosService.updateSlug(id, slug);
+  }
   @Patch(':id/propietario')
   @Roles('SUPERADMIN')
   asignarPropietario(

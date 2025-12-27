@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { Complejo } from '@/types/api.types';
 
-function ConfiguracionContent({ params }: { params: Promise<{ complejoId: string }> }) {
-    const { complejoId } = use(params);
+function ConfiguracionContent({ params }: { params: { complejoId: string } }) {
+    const { complejoId } = params;
     const { canEditComplejo } = usePermissions();
     const queryClient = useQueryClient();
 
@@ -367,7 +367,7 @@ function ConfiguracionContent({ params }: { params: Promise<{ complejoId: string
         </DashboardLayout>
     );
 }
-export default function ConfiguracionPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function ConfiguracionPage({ params }: { params: { complejoId: string } }) {
     return (
         <ProtectedRoute>
             <ConfiguracionContent params={params} />

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { CanchasService } from './canchas.service.js';
-import { CanchasController } from './canchas.controller.js';
-import { PrismaModule } from '../prisma/prisma.module.js';
+import { CanchasService } from './canchas.service';
+import { CanchasController } from './canchas.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],

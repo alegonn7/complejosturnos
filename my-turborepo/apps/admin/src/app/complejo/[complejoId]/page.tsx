@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useEstadisticas } from '@/hooks/useEstadisticas';
@@ -10,8 +9,8 @@ import { Badge } from '@/components/ui/Badge';
 import { formatPrice, formatTime } from '@/lib/utils';
 import { TURNO_COLORS, TURNO_LABELS } from '@/lib/constants';
 
-function DashboardContent({ params }: { params: Promise<{ complejoId: string }> }) {
-  const { complejoId } = use(params);
+function DashboardContent({ params }: { params: { complejoId: string } }) {
+  const { complejoId } = params;
   const { dashboard, isLoading } = useEstadisticas(complejoId);
 
   if (isLoading) {
@@ -113,13 +112,12 @@ function DashboardContent({ params }: { params: Promise<{ complejoId: string }> 
                 {alertas.map((alerta, index) => (
                   <div
                     key={index}
-                    className={`p-3 rounded-md border ${
-                      alerta.prioridad === 'ALTA'
+                    className={`p-3 rounded-md border ${alerta.prioridad === 'ALTA'
                         ? 'bg-red-50 border-red-200'
                         : alerta.prioridad === 'MEDIA'
-                        ? 'bg-yellow-50 border-yellow-200'
-                        : 'bg-blue-50 border-blue-200'
-                    }`}
+                          ? 'bg-yellow-50 border-yellow-200'
+                          : 'bg-blue-50 border-blue-200'
+                      }`}
                   >
                     <p className="text-sm font-medium">{alerta.mensaje}</p>
                   </div>
@@ -179,9 +177,8 @@ function DashboardContent({ params }: { params: Promise<{ complejoId: string }> 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-primary-600">Turnos</span>
-                  <span className={`text-sm font-semibold ${
-                    tendenciaSemanal.variacion.turnos.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-semibold ${tendenciaSemanal.variacion.turnos.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {tendenciaSemanal.variacion.turnos}
                   </span>
                 </div>
@@ -195,9 +192,8 @@ function DashboardContent({ params }: { params: Promise<{ complejoId: string }> 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-primary-600">Ingresos</span>
-                  <span className={`text-sm font-semibold ${
-                    tendenciaSemanal.variacion.ingresos.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-semibold ${tendenciaSemanal.variacion.ingresos.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {tendenciaSemanal.variacion.ingresos}
                   </span>
                 </div>
@@ -234,7 +230,7 @@ function DashboardContent({ params }: { params: Promise<{ complejoId: string }> 
   );
 }
 
-export default function DashboardPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function DashboardPage({ params }: { params: { complejoId: string } }) {
   return (
     <ProtectedRoute>
       <DashboardContent params={params} />

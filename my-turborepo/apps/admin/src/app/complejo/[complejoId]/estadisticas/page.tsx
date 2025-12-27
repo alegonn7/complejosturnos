@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -38,8 +38,8 @@ interface RendimientoData {
   insights: string[];
 }
 
-function EstadisticasContent({ params }: { params: Promise<{ complejoId: string }> }) {
-  const { complejoId } = use(params);
+function EstadisticasContent({ params }: { params: { complejoId: string } }) {
+  const { complejoId } = params
   const [periodo, setPeriodo] = useState<'semanal' | 'mensual' | 'anual'>('mensual');
 
   const { data: rendimiento, isLoading } = useQuery({
@@ -268,7 +268,7 @@ function EstadisticasContent({ params }: { params: Promise<{ complejoId: string 
   );
 }
 
-export default function EstadisticasPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function EstadisticasPage({ params }: { params: { complejoId: string } }) {
   return (
     <ProtectedRoute>
       <EstadisticasContent params={params} />

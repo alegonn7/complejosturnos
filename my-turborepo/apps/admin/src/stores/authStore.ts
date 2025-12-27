@@ -30,7 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (identifier: string, password: string) => {
     try {
-      const response = await api.post('/api/auth/login', { identifier, password });
+      const response = await api.post('/auth/login', { identifier, password });
       set({
         usuario: response.data.usuario,
         isAuthenticated: true,

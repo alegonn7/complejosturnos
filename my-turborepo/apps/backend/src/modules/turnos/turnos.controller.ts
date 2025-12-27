@@ -11,23 +11,26 @@ import {
     ForbiddenException,
     Query,
 } from '@nestjs/common';
-import { TurnosService } from './turnos.service.js';
-import { GenerarTurnosDto } from './dto/generar-turnos.dto.js';
-import { ReservarTurnoDto } from './dto/reservar-turno.dto.js';
-import { UpdateTurnoDto } from './dto/update-turno.dto.js';
-import { CancelarTurnoDto } from './dto/cancelar-turno.dto.js';
-import { MarcarAusenteDto } from './dto/marcar-ausente.dto.js';
-import { ConsultarDisponibilidadDto } from './dto/consultar-disponibilidad.dto.js';
-import { Public } from '../auth/decorators/public.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { TurnoOwnershipGuard } from './guards/turno-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { TurnosService } from './turnos.service';
+import { TurnosCron } from './turnos.cron';
+import { GenerarTurnosDto } from './dto/generar-turnos.dto';
+import { ReservarTurnoDto } from './dto/reservar-turno.dto';
+import { UpdateTurnoDto } from './dto/update-turno.dto';
+import { CancelarTurnoDto } from './dto/cancelar-turno.dto';
+import { MarcarAusenteDto } from './dto/marcar-ausente.dto';
+import { ConsultarDisponibilidadDto } from './dto/consultar-disponibilidad.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { TurnoOwnershipGuard } from './guards/turno-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('turnos')
 @UseGuards(RolesGuard)
 export class TurnosController {
-    constructor(private readonly turnosService: TurnosService) { }
+    constructor(private readonly turnosService: TurnosService,
+        private readonly turnosCron: TurnosCron
+    ) { }
 
     // ============ PÚBLICO ============
     @Public()
@@ -175,5 +178,12 @@ export class TurnosController {
     @UseGuards(TurnoOwnershipGuard)
     cancelarTurnoIndividual(@Param('id') id: string, @CurrentUser() user: any) {
         return this.turnosService.cancelarTurnoIndividual(id, user.id, user.rol);
+    }
+
+
+    @Post('generar-automatico')
+    @Roles('SUPERADMIN', 'DUENO', 'EMPLEADO')
+    generarTurnosAutomatico() {
+        return this.turnosCron.generarTurnosParaTodasLasCanchas();
     }
 }

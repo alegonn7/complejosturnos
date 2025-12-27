@@ -10,19 +10,19 @@ import {
   Req,
   ForbiddenException,
 } from '@nestjs/common';
-import { CanchasService } from './canchas.service.js';
-import { CreateCanchaDto } from './dto/create-cancha.dto.js';
-import { UpdateCanchaDto } from './dto/update-cancha.dto.js';
-import { UpdateEstadoCanchaDto } from './dto/update-estado-cancha.dto.js';
-import { CreateConfiguracionHorarioDto } from './dto/create-configuracion-horario.dto.js';
-import { UpdateConfiguracionHorarioDto } from './dto/update-configuracion-horario.dto.js';
-import { CreatePrecioDinamicoDto } from './dto/create-precio-dinamico.dto.js';
-import { UpdatePrecioDinamicoDto } from './dto/update-precio-dinamico.dto.js';
-import { Public } from '../auth/decorators/public.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { CanchaOwnershipGuard } from './guards/cancha-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { CanchasService } from './canchas.service';
+import { CreateCanchaDto } from './dto/create-cancha.dto';
+import { UpdateCanchaDto } from './dto/update-cancha.dto';
+import { UpdateEstadoCanchaDto } from './dto/update-estado-cancha.dto';
+import { CreateConfiguracionHorarioDto } from './dto/create-configuracion-horario.dto';
+import { UpdateConfiguracionHorarioDto } from './dto/update-configuracion-horario.dto';
+import { CreatePrecioDinamicoDto } from './dto/create-precio-dinamico.dto';
+import { UpdatePrecioDinamicoDto } from './dto/update-precio-dinamico.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { CanchaOwnershipGuard } from './guards/cancha-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Controller('canchas')
 @UseGuards(RolesGuard)
 export class CanchasController {

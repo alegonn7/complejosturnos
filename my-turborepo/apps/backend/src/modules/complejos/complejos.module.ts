@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ComplejosService } from './complejos.service.js';
-import { ComplejosController } from './complejos.controller.js';
-import { PrismaModule } from '../prisma/prisma.module.js';
+import { ComplejosService } from './complejos.service';
+import { ComplejosController } from './complejos.controller';
+import { PrismaModule } from '../prisma/prisma.module';
+import { ConfiguracionTemaModule } from '../configuracion-tema/configuracion-tema.module.js'; // 👈 IMPORTAR
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ConfiguracionTemaModule],
   controllers: [ComplejosController],
   providers: [ComplejosService],
   exports: [ComplejosService],

@@ -8,13 +8,13 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { TurnosFijosService } from './turnos-fijos.service.js';
-import { CreateTurnoFijoDto } from './dto/create-turno-fijo.dto.js';
-import { UpdateTurnoFijoDto } from './dto/update-turno-fijo.dto.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { TurnoFijoOwnershipGuard } from './guards/turno-fijo-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { TurnosFijosService } from './turnos-fijos.service';
+import { CreateTurnoFijoDto } from './dto/create-turno-fijo.dto';
+import { UpdateTurnoFijoDto } from './dto/update-turno-fijo.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { TurnoFijoOwnershipGuard } from './guards/turno-fijo-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('turnos-fijos')
 @UseGuards(RolesGuard)

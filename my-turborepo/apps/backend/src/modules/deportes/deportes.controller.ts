@@ -10,14 +10,14 @@ import {
   Req,
   ForbiddenException,
 } from '@nestjs/common';
-import { DeportesService } from './deportes.service.js';
-import { CreateDeporteDto } from './dto/create-deporte.dto.js';
-import { UpdateDeporteDto } from './dto/update-deporte.dto.js';
-import { Public } from '../auth/decorators/public.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { DeporteOwnershipGuard } from './guards/deporte-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { DeportesService } from './deportes.service';
+import { CreateDeporteDto } from './dto/create-deporte.dto';
+import { UpdateDeporteDto } from './dto/update-deporte.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { DeporteOwnershipGuard } from './guards/deporte-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('deportes')
 @UseGuards(RolesGuard)

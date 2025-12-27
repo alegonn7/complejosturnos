@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateUsuarioDto } from './dto/create-usuario.dto.js';
-import { UpdateUsuarioDto } from './dto/update-usuario.dto.js';
-import { UpdateEmpleadoDto } from './dto/update-empleado.dto.js';
-import { UpdateMeDto } from './dto/update-me.dto.js';
-import { ChangePasswordDto } from './dto/change-password.dto.js';
-import { ChangeRolDto } from './dto/change-rol.dto.js';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangeRolDto } from './dto/change-rol.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()

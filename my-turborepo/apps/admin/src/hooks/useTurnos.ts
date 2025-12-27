@@ -15,6 +15,18 @@ export function useTurnos(complejoId?: string) {
     enabled: !!complejoId,
   });
 
+  // ✅ NUEVO: Generar turnos automáticamente
+  const generarTurnosAutomatico = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/turnos/generar-automatico');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['turnos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
   // Confirmar turno
   const confirmarTurno = useMutation({
     mutationFn: async (turnoId: string) => {
@@ -35,6 +47,7 @@ export function useTurnos(complejoId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['turnos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 
@@ -57,12 +70,14 @@ export function useTurnos(complejoId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['turnos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 
   return {
     turnos,
     isLoading,
+    generarTurnosAutomatico, // ✅ NUEVO
     confirmarTurno,
     marcarAusente,
     bloquearTurno,

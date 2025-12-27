@@ -7,14 +7,14 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { PagosService } from './pagos.service.js';
-import { EnviarComprobanteDto } from './dto/enviar-comprobante.dto.js';
-import { RechazarPagoDto } from './dto/rechazar-pago.dto.js';
-import { Public } from '../auth/decorators/public.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { PagoOwnershipGuard } from './guards/pago-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { PagosService } from './pagos.service';
+import { EnviarComprobanteDto } from './dto/enviar-comprobante.dto';
+import { RechazarPagoDto } from './dto/rechazar-pago.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { PagoOwnershipGuard } from './guards/pago-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('pagos')
 @UseGuards(RolesGuard)

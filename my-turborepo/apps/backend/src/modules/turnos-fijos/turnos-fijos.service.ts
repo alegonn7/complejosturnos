@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateTurnoFijoDto } from './dto/create-turno-fijo.dto.js';
-import { UpdateTurnoFijoDto } from './dto/update-turno-fijo.dto.js';
-import { Prisma } from '@canchas/database';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateTurnoFijoDto } from './dto/create-turno-fijo.dto';
+import { UpdateTurnoFijoDto } from './dto/update-turno-fijo.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TurnosFijosService {
@@ -159,7 +159,7 @@ export class TurnosFijosService {
         turnoFijoId: id,
         accion: 'PAUSADO',
         detalle: 'Turno fijo pausado por el usuario',
-        usuarioId,
+        usuarioId: null,
       },
     });
 
@@ -194,7 +194,7 @@ export class TurnosFijosService {
         turnoFijoId: id,
         accion: 'REACTIVADO',
         detalle: 'Turno fijo reactivado por el usuario',
-        usuarioId,
+        usuarioId: null,
       },
     });
 
@@ -251,7 +251,7 @@ export class TurnosFijosService {
         turnoFijoId: id,
         accion: 'CANCELADO',
         detalle: 'Turno fijo cancelado',
-        usuarioId,
+        usuarioId: null,
       },
     });
 
@@ -466,7 +466,7 @@ export class TurnosFijosService {
           turnoFijoId: id,
           accion: 'CANCHA_CAMBIADA',
           detalle: `Cancha cambiada de ${turnoFijo.canchaId} a ${updateTurnoFijoDto.canchaId}`,
-          usuarioId,
+          usuarioId: null,
         },
       });
     }
@@ -574,8 +574,8 @@ export class TurnosFijosService {
               fecha: fechaTurno,
               duracion: turnoFijo.duracion,
               estado: estadoInicial,
-              precioTotal: new Prisma.Decimal(precioTotal.toFixed(2)),
-              montoSeña: montoSeña ? new Prisma.Decimal(montoSeña.toFixed(2)) : null,
+              precioTotal: precioTotal.toFixed(2),
+              montoSeña: montoSeña ? montoSeña.toFixed(2) : null,
               fechaExpiracion,
               fechaReserva: estadoInicial === 'RESERVADO' ? new Date() : null,
               fechaConfirmacion: estadoInicial === 'CONFIRMADO' ? new Date() : null,
@@ -621,6 +621,7 @@ export class TurnosFijosService {
           turnoFijoId: turnoFijo.id,
           accion: 'CANCELADO',
           detalle: 'Turno fijo cancelado automáticamente: no hay canchas disponibles en el complejo',
+          usuarioId: null,
         },
       });
 
@@ -653,6 +654,7 @@ export class TurnosFijosService {
             turnoFijoId: turnoFijo.id,
             accion: 'CANCHA_CAMBIADA',
             detalle: `Cancha reasignada automáticamente a ${canchaAlternativa.nombre}`,
+            usuarioId: null,
           },
         });
 
@@ -671,6 +673,7 @@ export class TurnosFijosService {
         turnoFijoId: turnoFijo.id,
         accion: 'PAUSADO',
         detalle: 'Turno fijo pausado automáticamente: todas las canchas disponibles están ocupadas en ese horario',
+        usuarioId: null,
       },
     });
   }

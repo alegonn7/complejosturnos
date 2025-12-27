@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useEmpleados } from '@/hooks/useEmpleados';
@@ -14,8 +14,8 @@ import { Alert } from '@/components/ui/Alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Usuario } from '@/types/api.types';
 
-function EmpleadosContent({ params }: { params: Promise<{ complejoId: string }> }) {
-  const { complejoId } = use(params);
+function EmpleadosContent({ params }: { params: { complejoId: string } }) {
+  const { complejoId } = params;
   const { canManageEmpleados } = usePermissions();
   const { empleados, isLoading, crearEmpleado, editarEmpleado, cambiarPassword, eliminarEmpleado } = useEmpleados(complejoId);
 
@@ -463,7 +463,7 @@ function EmpleadosContent({ params }: { params: Promise<{ complejoId: string }> 
   );
 }
 
-export default function EmpleadosPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function EmpleadosPage({ params }: { params: { complejoId: string } }) {
   return (
     <ProtectedRoute>
       <EmpleadosContent params={params} />

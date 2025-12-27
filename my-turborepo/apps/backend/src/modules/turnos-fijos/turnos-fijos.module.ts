@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TurnosFijosService } from './turnos-fijos.service.js';
-import { TurnosFijosController } from './turnos-fijos.controller.js';
-import { TurnosFijosCron } from './turnos-fijos.cron.js';
-import { PrismaModule } from '../prisma/prisma.module.js';
+import { TurnosFijosService } from './turnos-fijos.service';
+import { TurnosFijosController } from './turnos-fijos.controller';
+import { TurnosFijosCron } from './turnos-fijos.cron';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],

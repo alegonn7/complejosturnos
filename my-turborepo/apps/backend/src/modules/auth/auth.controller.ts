@@ -1,14 +1,16 @@
-import { Controller, Post, Get, Body, Res, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, HttpCode, HttpStatus, OnModuleInit } from '@nestjs/common';
 import type { Response } from 'express';
-import { AuthService } from './auth.service.js';
-import { LoginDto } from './dto/login.dto.js';
-import { RegisterDto } from './dto/register.dto.js';
-import { Public } from './decorators/public.decorator.js';
-import { CurrentUser } from './decorators/current-user.decorator.js';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { Public } from './decorators/public.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
-export class AuthController {
-  constructor(private authService: AuthService) {
+export class AuthController implements OnModuleInit {
+  constructor(private readonly authService: AuthService) {}
+
+  onModuleInit() {
   }
 
   @Public()
@@ -30,6 +32,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
+
     const result = await this.authService.login(loginDto);
 
     // Duración basada en "recordarme"

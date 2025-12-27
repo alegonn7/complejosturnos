@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TurnosService } from './turnos.service.js';
-import { TurnosController } from './turnos.controller.js';
-import { TurnosCron } from './turnos.cron.js';
-import { PrismaModule } from '../prisma/prisma.module.js';
+import { TurnosService } from './turnos.service';
+import { TurnosController } from './turnos.controller';
+import { TurnosCron } from './turnos.cron';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],

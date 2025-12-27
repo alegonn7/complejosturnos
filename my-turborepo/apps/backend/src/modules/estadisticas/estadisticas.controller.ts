@@ -4,13 +4,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { EstadisticasService } from './estadisticas.service.js';
-import { DashboardDto } from './dto/dashboard.dto.js';
-import { RendimientoDto } from './dto/rendimiento.dto.js';
-import { FiltrosEstadisticasDto } from './dto/filtros-estadisticas.dto.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { EstadisticasService } from './estadisticas.service';
+import { DashboardDto } from './dto/dashboard.dto';
+import { RendimientoDto } from './dto/rendimiento.dto';
+import { FiltrosEstadisticasDto } from './dto/filtros-estadisticas.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('estadisticas')
 @UseGuards(RolesGuard)

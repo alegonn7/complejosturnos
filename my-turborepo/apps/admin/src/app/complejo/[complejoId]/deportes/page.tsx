@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useDeportes } from '@/hooks/useDeportes';
@@ -13,8 +13,8 @@ import { Alert } from '@/components/ui/Alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Deporte } from '@/types/api.types';
 
-function DeportesContent({ params }: { params: Promise<{ complejoId: string }> }) {
-  const { complejoId } = use(params);
+function DeportesContent({ params }: { params: { complejoId: string } }) {
+  const { complejoId } = params;
   const { deportes, isLoading, crearDeporte, editarDeporte, eliminarDeporte } = useDeportes(complejoId);
 
   const [modalCrear, setModalCrear] = useState(false);
@@ -248,7 +248,7 @@ function DeportesContent({ params }: { params: Promise<{ complejoId: string }> }
   );
 }
 
-export default function DeportesPage({ params }: { params: Promise<{ complejoId: string }> }) {
+export default function DeportesPage({ params }: { params:{ complejoId: string } }) {
   return (
     <ProtectedRoute>
       <DeportesContent params={params} />

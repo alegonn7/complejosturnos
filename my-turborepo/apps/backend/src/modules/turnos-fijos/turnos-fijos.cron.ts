@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { TurnosFijosService } from './turnos-fijos.service.js';
+import { TurnosFijosService } from './turnos-fijos.service';
 
 @Injectable()
 export class TurnosFijosCron {

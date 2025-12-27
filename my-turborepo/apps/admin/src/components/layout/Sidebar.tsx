@@ -37,6 +37,12 @@ export function Sidebar({ complejoId }: { complejoId?: string }) {
     { name: 'Turnos Fijos', href: `/complejo/${complejoId}/turnos-fijos`, icon: '🔁' },
     { name: 'Estadísticas', href: `/complejo/${complejoId}/estadisticas`, icon: '📈' },
     { name: 'Configuración', href: `/complejo/${complejoId}/configuracion`, icon: '⚙️' },
+      {
+    name: 'Personalización',
+    href: `/complejo/${complejoId}/personalizacion`,
+    icon: '🎨',
+    roles: ['DUENO'], // Solo dueños y superadmin
+  }
   ];
 
   const items = isSuperAdmin && !complejoId ? superAdminItems : complejoItems;

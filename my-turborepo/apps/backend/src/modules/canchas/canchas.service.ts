@@ -1,17 +1,17 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateCanchaDto } from './dto/create-cancha.dto.js';
-import { UpdateCanchaDto } from './dto/update-cancha.dto.js';
-import { UpdateEstadoCanchaDto } from './dto/update-estado-cancha.dto.js';
-import { CreateConfiguracionHorarioDto } from './dto/create-configuracion-horario.dto.js';
-import { UpdateConfiguracionHorarioDto } from './dto/update-configuracion-horario.dto.js';
-import { CreatePrecioDinamicoDto } from './dto/create-precio-dinamico.dto.js';
-import { UpdatePrecioDinamicoDto } from './dto/update-precio-dinamico.dto.js';
-import { Prisma } from '@canchas/database';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateCanchaDto } from './dto/create-cancha.dto';
+import { UpdateCanchaDto } from './dto/update-cancha.dto';
+import { UpdateEstadoCanchaDto } from './dto/update-estado-cancha.dto';
+import { CreateConfiguracionHorarioDto } from './dto/create-configuracion-horario.dto';
+import { UpdateConfiguracionHorarioDto } from './dto/update-configuracion-horario.dto';
+import { CreatePrecioDinamicoDto } from './dto/create-precio-dinamico.dto';
+import { UpdatePrecioDinamicoDto } from './dto/update-precio-dinamico.dto';
+import { Prisma, } from '@prisma/client';
 
 @Injectable()
 export class CanchasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ============ PÚBLICO ============
   async findByComplejo(complejoId: string) {
@@ -24,7 +24,7 @@ export class CanchasService {
     }
 
     return this.prisma.cancha.findMany({
-      where: { 
+      where: {
         complejoId,
         estado: 'HABILITADA',
       },
@@ -157,7 +157,7 @@ export class CanchasService {
     return this.prisma.cancha.create({
       data: {
         ...createCanchaDto,
-        precioBase: new Prisma.Decimal(createCanchaDto.precioBase),
+        precioBase: createCanchaDto.precioBase,
       },
       select: {
         id: true,
@@ -276,7 +276,7 @@ export class CanchasService {
 
     const dataToUpdate: any = { ...updateCanchaDto };
     if (updateCanchaDto.precioBase !== undefined) {
-      dataToUpdate.precioBase = new Prisma.Decimal(updateCanchaDto.precioBase);
+      dataToUpdate.precioBase = updateCanchaDto.precioBase;
     }
 
     return this.prisma.cancha.update({

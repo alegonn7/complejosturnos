@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { DashboardDto } from './dto/dashboard.dto.js';
-import { RendimientoDto } from './dto/rendimiento.dto.js';
-import { FiltrosEstadisticasDto } from './dto/filtros-estadisticas.dto.js';
-import { Alerta, ResumenDia, ProximoTurno, TendenciaSemanal } from './interfaces/estadisticas.interface.js';
+import { PrismaService } from '../prisma/prisma.service';
+import { DashboardDto } from './dto/dashboard.dto';
+import { RendimientoDto } from './dto/rendimiento.dto';
+import { FiltrosEstadisticasDto } from './dto/filtros-estadisticas.dto';
+import { Alerta, ResumenDia, ProximoTurno, TendenciaSemanal } from './interfaces/estadisticas.interface';
 
 @Injectable()
 export class EstadisticasService {

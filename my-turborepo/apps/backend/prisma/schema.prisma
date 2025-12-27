@@ -1,10 +1,13 @@
 // Sistema de Gestión de Turnos para Canchas
 generator client {
   provider = "prisma-client-js"
+  
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+
 }
 
 // USUARIOS
@@ -42,6 +45,7 @@ model Usuario {
 // COMPLEJOS
 model Complejo {
   id          String   @id @default(cuid())
+  slug        String?   @unique
   nombre      String
   direccion   String
   telefono    String
@@ -67,7 +71,8 @@ model Complejo {
   
   propietarioId String?
   propietario   Usuario?  @relation("ComplejosPropietario", fields: [propietarioId], references: [id])
-  
+
+  configuracionTema ConfiguracionTema?  
   empleados  Usuario[]
   canchas    Cancha[]
   deportes   Deporte[]
@@ -168,7 +173,7 @@ enum EstadoTurno {
 
 model Turno {
   id          String      @id @default(cuid())
-  fecha       DateTime
+  fecha       DateTime    @db.Timestamptz  // ✅ CAMBIO
   duracion    Int
   estado      EstadoTurno @default(DISPONIBLE)
   
@@ -180,9 +185,9 @@ model Turno {
   precioTotal      Decimal  @db.Decimal(10, 2)
   montoSeña        Decimal? @db.Decimal(10, 2)
   
-  fechaReserva      DateTime?
-  fechaExpiracion   DateTime?
-  fechaConfirmacion DateTime?
+  fechaReserva      DateTime?  @db.Timestamptz  // ✅ CAMBIO
+  fechaExpiracion   DateTime?  @db.Timestamptz  // ✅ CAMBIO
+  fechaConfirmacion DateTime?  @db.Timestamptz  // ✅ CAMBIO
   
   canchaId    String
   cancha      Cancha   @relation(fields: [canchaId], references: [id])
@@ -198,8 +203,8 @@ model Turno {
   
   pago        Pago?
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())  @db.Timestamptz  // ✅ CAMBIO
+  updatedAt   DateTime @updatedAt       @db.Timestamptz  // ✅ CAMBIO
   
   @@index([fecha, canchaId])
   @@index([estado])
@@ -277,4 +282,51 @@ model HistorialTurnoFijo {
   createdAt   DateTime @default(now())
   
   turnoFijo   TurnoFijo @relation(fields: [turnoFijoId], references: [id], onDelete: Cascade)
+}
+
+// CONFIGURACION DE TEMA (PERSONALIZACIÓN)
+model ConfiguracionTema {
+  id              String   @id @default(cuid())
+  complejoId      String   @unique
+  
+  // BRANDING BÁSICO
+  logoUrl         String?
+  faviconUrl      String?
+  nombreMostrar   String
+  
+  // COLORES (formato HEX)
+  colorPrimario   String   @default("#0a0a0a")
+  colorSecundario String   @default("#404040")
+  colorAccent     String   @default("#22c55e")
+  colorFondo      String   @default("#ffffff")
+  
+  // TEXTOS PERSONALIZABLES
+  textoHeroPrincipal   String?  @db.Text
+  textoHeroSecundario  String?  @db.Text
+  textoFooter          String?  @db.Text
+  textoWhatsApp        String?  @db.Text
+  
+  // BANNERS (URLs a imágenes)
+  bannerHomeUrl       String?
+  bannerReservaUrl    String?
+  
+  // SEO
+  metaTitle           String?
+  metaDescription     String?  @db.Text
+  metaKeywords        String?
+  
+  // REDES SOCIALES
+  facebookUrl     String?
+  instagramUrl    String?
+  tiktokUrl       String?
+  
+  // CONFIGURACIÓN AVANZADA
+  fontFamily      String?  @default("Inter")
+  
+  complejo        Complejo @relation(fields: [complejoId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([complejoId])
 }

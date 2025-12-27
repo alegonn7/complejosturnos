@@ -8,17 +8,17 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { UsuariosService } from './usuarios.service.js';
-import { CreateUsuarioDto } from './dto/create-usuario.dto.js';
-import { UpdateUsuarioDto } from './dto/update-usuario.dto.js';
-import { UpdateEmpleadoDto } from './dto/update-empleado.dto.js';
-import { UpdateMeDto } from './dto/update-me.dto.js';
-import { ChangePasswordDto } from './dto/change-password.dto.js';
-import { ChangeRolDto } from './dto/change-rol.dto.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
-import { RolesGuard } from '../../common/guards/roles.guard.js';
-import { EmpleadoOwnershipGuard } from './guards/empleado-ownership.guard.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { UsuariosService } from './usuarios.service';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangeRolDto } from './dto/change-rol.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { EmpleadoOwnershipGuard } from './guards/empleado-ownership.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('usuarios')
 @UseGuards(RolesGuard)

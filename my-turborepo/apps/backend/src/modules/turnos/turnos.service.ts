@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { GenerarTurnosDto } from './dto/generar-turnos.dto.js';
-import { ReservarTurnoDto } from './dto/reservar-turno.dto.js';
-import { UpdateTurnoDto } from './dto/update-turno.dto.js';
-import { CancelarTurnoDto } from './dto/cancelar-turno.dto.js';
-import { MarcarAusenteDto } from './dto/marcar-ausente.dto.js';
-import { ConsultarDisponibilidadDto } from './dto/consultar-disponibilidad.dto.js';
-import { Prisma } from '@canchas/database';
+import { PrismaService } from '../prisma/prisma.service';
+import { GenerarTurnosDto } from './dto/generar-turnos.dto';
+import { ReservarTurnoDto } from './dto/reservar-turno.dto';
+import { UpdateTurnoDto } from './dto/update-turno.dto';
+import { CancelarTurnoDto } from './dto/cancelar-turno.dto';
+import { MarcarAusenteDto } from './dto/marcar-ausente.dto';
+import { ConsultarDisponibilidadDto } from './dto/consultar-disponibilidad.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TurnosService {
@@ -47,7 +47,7 @@ export class TurnosService {
         }
 
         // Verificar permisos
-        if (userRole !== 'SUPERADMIN') {
+        if (userId !== 'SYSTEM' && userRole !== 'SUPERADMIN') {
             const isDueno = cancha.complejo.propietarioId === userId;
             const isEmpleado = cancha.complejo.empleados.length > 0;
 
@@ -63,12 +63,12 @@ export class TurnosService {
         // Generar turnos
         const turnosGenerados = [];
         const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+        hoy.setUTCHours(0, 0, 0, 0);  // <- UTC
 
         for (let i = 0; i < diasAdelante; i++) {
             const fecha = new Date(hoy);
-            fecha.setDate(fecha.getDate() + i);
-            const diaSemana = fecha.getDay();
+            fecha.setUTCDate(fecha.getUTCDate() + i);  // <- UTC
+            const diaSemana = fecha.getUTCDay();
 
             // Buscar configuración para este día
             const config = cancha.configuracionHorarios.find(c => c.diaSemana === diaSemana);
@@ -85,14 +85,14 @@ export class TurnosService {
             const [horaFinHH, horaFinMM] = config.horaFin.split(':').map(Number);
 
             let horaActual = new Date(fecha);
-            horaActual.setHours(horaInicioHH, horaInicioMM, 0, 0);
+            horaActual.setUTCHours(horaInicioHH, horaInicioMM, 0, 0);  // <- UTC
 
             const horaFin = new Date(fecha);
-            horaFin.setHours(horaFinHH, horaFinMM, 0, 0);
+            horaFin.setUTCHours(horaFinHH, horaFinMM, 0, 0);  // <- UTC
 
             while (horaActual < horaFin) {
                 const horaSiguiente = new Date(horaActual);
-                horaSiguiente.setMinutes(horaSiguiente.getMinutes() + config.duracionTurno);
+                horaSiguiente.setUTCMinutes(horaSiguiente.getUTCMinutes() + config.duracionTurno);  // <- UTC
 
                 if (horaSiguiente > horaFin) break;
 
@@ -108,7 +108,7 @@ export class TurnosService {
                     turnosGenerados.push({
                         fecha: new Date(horaActual),
                         duracion: config.duracionTurno,
-                        precioTotal: new Prisma.Decimal(precioTotal.toFixed(2)),
+                        precioTotal: precioTotal.toFixed(2),
                         estado: 'DISPONIBLE' as const,
                         canchaId,
                         complejoId: cancha.complejoId,
@@ -136,6 +136,9 @@ export class TurnosService {
     // ============ CONSULTAR DISPONIBILIDAD (PÚBLICO) ============
     async consultarDisponibilidad(consultarDisponibilidadDto: ConsultarDisponibilidadDto) {
         const { canchaId, fecha, fechaFin } = consultarDisponibilidadDto;
+        console.log('📅 Fecha recibida del frontend:', fecha);
+        console.log('🕐 new Date(fecha):', new Date(fecha));
+        console.log('🌍 Hora local del servidor:', new Date());
 
         // Verificar que la cancha existe
         const cancha = await this.prisma.cancha.findUnique({
@@ -157,10 +160,10 @@ export class TurnosService {
 
         // Construir filtro de fechas
         const fechaInicio = new Date(fecha);
-        fechaInicio.setHours(0, 0, 0, 0);
+        fechaInicio.setUTCHours(0, 0, 0, 0);  // <- UTC
 
         const fechaFinDate = fechaFin ? new Date(fechaFin) : new Date(fecha);
-        fechaFinDate.setHours(23, 59, 59, 999);
+        fechaFinDate.setUTCHours(23, 59, 59, 999);  // <- UTC
 
         // Buscar turnos disponibles
         const turnos = await this.prisma.turno.findMany({
@@ -177,6 +180,7 @@ export class TurnosService {
                 fecha: true,
                 duracion: true,
                 precioTotal: true,
+                estado: true,  // ✅ AGREGADO
             },
             orderBy: {
                 fecha: 'asc',
@@ -238,7 +242,9 @@ export class TurnosService {
         }
 
         // Verificar que el turno no esté en el pasado
-        if (turno.fecha < new Date()) {
+        const ahora = new Date();
+
+        if (turno.fecha < ahora) {
             throw new BadRequestException('No se puede reservar un turno en el pasado');
         }
 
@@ -263,7 +269,7 @@ export class TurnosService {
                 apellidoCliente,
                 dni,
                 usuarioId: userId || null,
-                montoSeña: montoSeña ? new Prisma.Decimal(montoSeña.toFixed(2)) : null,
+                montoSeña: montoSeña ? montoSeña.toFixed(2) : null,
                 fechaReserva: new Date(),
                 fechaExpiracion,
                 fechaConfirmacion: requiereSeña ? null : new Date(),

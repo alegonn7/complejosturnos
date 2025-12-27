@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateDeporteDto } from './dto/create-deporte.dto.js';
-import { UpdateDeporteDto } from './dto/update-deporte.dto.js';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateDeporteDto } from './dto/create-deporte.dto';
+import { UpdateDeporteDto } from './dto/update-deporte.dto';
 
 @Injectable()
 export class DeportesService {
